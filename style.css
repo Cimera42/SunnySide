@@ -1,0 +1,105 @@
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	display: grid;
+	grid-template-areas: "sidebar map";
+	grid-template-columns: 300px auto;
+}
+
+#map {
+	height: 100%;
+	grid-area: "map";
+}
+
+.sidebar {
+	grid-area: "sidebar";
+	display: grid;
+	grid-template-areas: "header" "content" "footer";
+	grid-template-rows: min-content auto 50px;
+	background-color: #77a;
+	color: #222;
+}
+
+.header {
+	grid-area: "header";
+	padding-top: 50px;
+	padding-bottom: 40px;
+	font-size: 2em;
+	background-color: #77a;
+	text-align: center;
+	border-bottom: 2px solid #111;
+}
+
+.content {
+	grid-area: "content";
+	padding: 15px;
+}
+
+.transitModeButtons {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+}
+
+.transitModeButtons div {
+	text-align: center;
+}
+
+.transitMode > input {
+	visibility: hidden;
+	position: absolute;
+}
+
+.transitMode > input + img{
+  	cursor: pointer;
+	background-color: #888;
+	height: 40px;
+	padding: 8px;
+	border-radius: 25%;
+}
+
+.transitMode > input:checked + img {
+	background-color: #666;
+}
+
+.transitMode > input:hover + img {
+	background-color: #aaa;
+}
+
+.sideButtons {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+}
+
+.sideButtons div {
+	text-align: center;
+}
+
+.side > input {
+	visibility: hidden;
+	position: absolute;
+}
+
+.side > input + img{
+  	/* cursor: pointer; */
+	background-color: #888;
+	height: 40px;
+	padding: 8px;
+	border-radius: 25%;
+}
+
+.side > input:checked + img {
+	background-color: orange;
+}
+
+/* .side > input:hover + img {
+	background-color: #aaa;
+} */
+
+.footer {
+	grid-area: "footer";
+	text-align: center;
+}
