@@ -3,60 +3,77 @@
 		<meta charset="utf-8">
 		<script defer src="suncalc.js"></script>
 		<script defer src="code.js"></script>
-		<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJMRhIpOpG6RSPeaBkG_B4qrXDsH1Z3GI&libraries=geometry&callback=initMap"></script>
+		<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJMRhIpOpG6RSPeaBkG_B4qrXDsH1Z3GI&libraries=geometry,places&callback=initMap"></script>
 		<link rel="stylesheet" href="style.css">
 	</head>
-	<body>
+	<body onload="init()">
 		<div class="sidebar">
 			<div class="header">
 				Sunny Side Up
 			</div>
 			<div class="content">
 				<div class="dataEntry">
+					<div class="timeChoice">
+						<label class="iconCheckbox">
+							<input id="timeCheckbox" type="checkbox" onclick="toggleTime(event)">
+							<div class="timeIcon"></div>
+						</label>
+						<input id="timeInput" type="time">
+						<label class="iconCheckbox">
+							<input type="button" onclick="setTime()">
+							<div class="updateIcon"></div>
+						</label>
+					</div>
 					<div class="transitModeButtons">
-						<div>
-							<label class="transitMode">
-								<input type="radio" name="transitMode" value="DRIVING" checked>
-								<img src="ic_directions_car_white_24px.svg">
-							</label>
-						</div>
-						<div>
-							<label class="transitMode">
-								<input type="radio" name="transitMode" value="TRANSIT">
-								<img src="ic_directions_transit_white_24px.svg">
-							</label>
-						</div>
+						<label class="radioItem">
+							<input type="radio" name="transitMode" value="DRIVING" checked>
+							<div class="carImage"/></div>
+						</label>
+						<label class="radioItem">
+							<input type="radio" name="transitMode" value="TRANSIT">
+							<div class="transitImage"></div>
+						</label>
 					</div>
 					<br>
-					<label for="startAddress">Start Location</label>
-					<input id="startAddress" value="Woodford NSW">
-					<br><br>
-					<label for="endAddress">End Location</label>
-					<input id="endAddress" value="Central Station NSW">
-					<br><br>
-					<input type="button" value="Calculate" onclick="doDirections()">
-					<div class="swapButton" onclick="swapLocations()">
-						<img src="ic_swap_vert_white_24px.svg">
+					<div class="address">
+						<label for="startAddress">Start Location:</label>
+						<br>
+						<input type="text" id="startAddress" list="startAddressList">
+					</div>
+					<div class="address">
+						<label for="endAddress">End Location:</label>
+						<br>
+						<input type="text" id="endAddress">
+					</div>
+					<div class="functions">
+						<div class="calcButton">
+							<input type="button" value="Calculate" onclick="doDirections()">
+						</div>
+						<label class="swapButton">
+							<input type="button" onclick="swapLocations()">
+							<div class="swapButtonImage"></div>
+						</label>
 					</div>
 				</div>
 				<div class="dataShow">
 					<div class="sideButtons">
-						<div>
-							<label class="side">
-								<input type="radio" name="side" value="left" disabled>
-								<img src="ic_arrow_back_white_24px.svg">
-							</label>
+						<label class="radioItem">
+							<input type="radio" name="side" value="left" disabled>
+							<div class="leftImage"></div>
+						</label>
+						<div class="routeDetails">
+							Route length:
 							<br>
-							Left: <span id="leftData"></span>
-						</div>
-						<div>
-							<label class="side">
-								<input type="radio" name="side" value="right" disabled>
-								<img src="ic_arrow_forward_white_24px.svg">
-							</label>
+							<span id="routeDistance"></span>
 							<br>
-							Right: <span id="rightData"></span>
+							Route duration:
+							<br>
+							<span id="routeDuration"></span>
 						</div>
+						<label class="radioItem">
+							<input type="radio" name="side" value="right" disabled>
+							<div class="rightImage"></div>
+						</label>
 					</div>
 				</div>
 			</div>

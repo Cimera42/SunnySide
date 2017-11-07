@@ -1,4 +1,32 @@
-var map;
+let apiKey = "AIzaSyCJMRhIpOpG6RSPeaBkG_B4qrXDsH1Z3GI";
+let map;
+
+function init()
+{
+	setTime();
+	document.getElementById("timeInput").disabled = !document.getElementById("timeCheckbox").checked;
+}
+
+function setTime()
+{
+	document.getElementById("timeInput").value = nowTime();
+}
+
+function nowTime()
+{
+	let date = new Date();
+	return date.getHours() + ":" + date.getMinutes();
+}
+
+function relTime(time)
+{
+	return new Date(new Date().toDateString() + " " + time)
+}
+
+function toggleTime(e)
+{
+	document.getElementById("timeInput").disabled = !e.target.checked;
+}
 
 function initMap() 
 {
@@ -10,10 +38,23 @@ function initMap()
 		zoom: 8
 	};
 	map = new google.maps.Map(document.getElementById('map'), mapConfig);
+
+	map.addListener('click', function() {
+		if(startInfoWindow) startInfoWindow.close();
+		if(endInfoWindow) endInfoWindow.close();
+	});
+	
+	let sA = new google.maps.places.Autocomplete(document.querySelector("#startAddress"), {});
+	let sE = new google.maps.places.Autocomplete(document.querySelector("#endAddress"), {});
+	sA.bindTo('bounds', map);
+	sE.bindTo('bounds', map);
 }
 
 let startTime, endTime, timeDiff;
 let totalDuration, totalDistance;
+let directionsResultVar;
+let startMarker, endMarker;
+let startInfoWindow, endInfoWindow;
 let segments = [];
 let segmentLines = [];
 let segmentSunLines = [];
@@ -24,7 +65,7 @@ function doDirections()
 {
 	segments.length = 0;
 
-	let transitMode = document.querySelector("input[name='transitMode']:checked").value;
+	let transitMode = document.querySelector(".transitModeButtons input:checked").value;
 
 	let directionsService = new google.maps.DirectionsService();
 	directionsService.route({
@@ -38,10 +79,16 @@ function directionResultCallback(directionsResult, directionsStatus)
 {
 	if(directionsStatus === "OK")
 	{
-		totalDuration = directionsResult.routes[0].legs[0].duration.value;
+		directionsResultVar = directionsResult;
+		totalDuration = directionsResult.routes[0].legs[0].duration.value*1000;
 		totalDistance = directionsResult.routes[0].legs[0].distance.value;
 
-		if(!startTime)
+		document.getElementById("routeDistance").innerText = directionsResult.routes[0].legs[0].distance.text;
+		document.getElementById("routeDuration").innerText = directionsResult.routes[0].legs[0].duration.text;
+
+		if(document.getElementById("timeCheckbox").checked)
+			startTime = relTime(document.getElementById("timeInput").value).getTime();
+		else
 			startTime = new Date().getTime();
 		endTime = startTime + totalDuration;
 		timeDiff = endTime - startTime;
@@ -77,7 +124,9 @@ function calcSun()
 	leftTally = 0;
 	rightTally = 0;
 
-	if(!startTime)
+	if(document.getElementById("timeCheckbox").checked)
+		startTime = relTime(document.getElementById("timeInput").value).getTime();
+	else
 		startTime = new Date().getTime();
 	endTime = startTime + totalDuration;
 	timeDiff = endTime - startTime;
@@ -103,15 +152,25 @@ function calcSun()
 		//right = -90
 		//-1 good -> 1 bad
 		let side = isLeft ? 90 : -90;
-		segment.sunRating = Math.cos(toRad(segment.sunHeading-(segment.heading+side)));
-		leftTally += segment.sunRating * (isLeft ? 1:-1);
-		rightTally -= segment.sunRating * (isLeft ? 1:-1);
+		if(sunData.altitude >= 0)
+		{
+			segment.sunRating = Math.cos(toRad(segment.sunHeading-(segment.heading+side)));
+			leftTally += segment.sunRating * (isLeft ? 1:-1);
+			rightTally -= segment.sunRating * (isLeft ? 1:-1);
+		}
+		else
+			segment.sunRating = 0;
 	});
 
-	document.getElementById("leftData").textContent = leftTally.toFixed(2);
-	document.getElementById("rightData").textContent = rightTally.toFixed(2);
+	console.log("Left: ", leftTally.toFixed(2));
+	console.log("Right: ", rightTally.toFixed(2));
 
-	if(leftTally > rightTally)
+	if(leftTally == rightTally)
+	{
+		document.querySelector("input[value='left']").checked = false;
+		document.querySelector("input[value='right']").checked = false;
+	}
+	else if(leftTally > rightTally)
 		document.querySelector("input[value='left']").checked = true;
 	else
 		document.querySelector("input[value='right']").checked = true;
@@ -125,8 +184,28 @@ function drawRoute()
 	segmentSunLines.forEach(v => v.setMap(null));
 	segmentLines.length = 0;
 	segmentSunLines.length = 0;
+	if(startMarker)
+	{
+		startMarker.setMap(null);
+		startMarker = null;
+	}
+	if(startInfoWindow)
+	{
+		startInfoWindow.setMap(null);
+		startInfoWindow = null;
+	}
+	if(endMarker)
+	{
+		endMarker.setMap(null);
+		endMarker = null;
+	}
+	if(endInfoWindow) 
+	{
+		endInfoWindow.setMap(null);
+		endInfoWindow = null;
+	}
 
-	let side = document.querySelector("input[name='side']:checked").value;
+	let side = (document.querySelector(".sideButtons input:checked") || {value:"left"}).value;
 	let proj = map.getProjection();
 
 	segments.forEach(segment => {
@@ -164,6 +243,32 @@ function drawRoute()
 		poly.setMap(map);
 		segmentLines.push(poly);
 	});
+	
+	startMarker = new google.maps.Marker({
+		position: directionsResultVar.routes[0].legs[0].start_location,
+		map: map,
+		icon: markerGen("A", "green"),
+		title: directionsResultVar.routes[0].legs[0].start_address
+	});
+	startInfoWindow = new google.maps.InfoWindow({
+		content: directionsResultVar.routes[0].legs[0].start_address
+	});
+	startMarker.addListener('click', function() {
+		startInfoWindow.open(map, startMarker);
+	});
+	
+	endMarker = new google.maps.Marker({
+		position:  directionsResultVar.routes[0].legs[0].end_location,
+		map: map,
+		icon: markerGen("B", "red"),
+		title: directionsResultVar.routes[0].legs[0].end_address
+	});
+	endInfoWindow = new google.maps.InfoWindow({
+		content: directionsResultVar.routes[0].legs[0].end_address
+	});
+	endMarker.addListener('click', function() {
+		endInfoWindow.open(map, endMarker);
+	});
 
 	focusOnRoute();
 }
@@ -199,4 +304,15 @@ function toRad(x)
 function toDeg(x)
 {
 	return x / (Math.PI / 180);
+}
+
+//https://stackoverflow.com/a/18531494
+function markerGen(label, color)
+{
+	let url = "https://mt.google.com/vt/icon/text=";
+	url += label;
+	url += "&psize=16&font=fonts/arialuni_t.ttf&color=ff330000&name=icons/spotlight/spotlight-waypoint-";
+	url += color == "red" ? "b" : "a";
+	url += ".png&ax=44&ay=48&scale=1";
+	return url;
 }

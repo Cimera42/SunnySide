@@ -20,8 +20,9 @@ body {
 	display: grid;
 	grid-template-areas: "header" "content" "footer";
 	grid-template-rows: min-content auto 50px;
-	background-color: #77a;
-	color: #222;
+	background-color: #669;
+	color: #eee;
+	font-family: "Times";
 }
 
 .header {
@@ -29,9 +30,8 @@ body {
 	padding-top: 50px;
 	padding-bottom: 40px;
 	font-size: 2em;
-	background-color: #77a;
 	text-align: center;
-	border-bottom: 2px solid #111;
+	border-bottom: 2px solid #ccc;
 }
 
 .content {
@@ -39,65 +39,205 @@ body {
 	padding: 15px;
 }
 
-.transitModeButtons {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
+.timeChoice {
+	width: 100%;
+	margin-bottom: 10px;
+	display: flex;
 }
 
-.transitModeButtons div {
-	text-align: center;
-}
-
-.transitMode > input {
+.iconCheckbox > input {
 	visibility: hidden;
 	position: absolute;
 }
 
-.transitMode > input + img{
-  	cursor: pointer;
-	background-color: #888;
-	height: 40px;
-	padding: 8px;
-	border-radius: 25%;
+.iconCheckbox > input + div {
+	cursor: pointer;
 }
 
-.transitMode > input:checked + img {
-	background-color: #666;
+.iconCheckbox > input:checked + div,
+.iconCheckbox > input:active + div {
+	background-color: #fa0;
 }
 
-.transitMode > input:hover + img {
-	background-color: #aaa;
+.iconCheckbox > input + div {
+	background-color: #ccc;
+}
+
+.iconCheckbox > input:not(:checked):not(:active):hover + div {
+	background-color: #eee;
+}
+
+.iconCheckbox > input:checked:hover + div {
+	background-color: #fc0;
+}
+
+.timeIcon {
+	margin: 5px;
+	width: 2em;
+	height: 2em;
+    mask-size: 2em;
+    mask-repeat: no-repeat;
+    mask-position: center; 
+	mask-image: url("ic_access_time_white_24px.svg");
+}
+
+.updateIcon {
+	margin: 5px;
+	width: 2em;
+	height: 2em;
+    mask-size: 2em;
+    mask-repeat: no-repeat;
+    mask-position: center; 
+	mask-image: url("ic_update_white_24px.svg");
+}
+
+#timeInput {
+	font-size: 2em;
+	border: none;
+}
+
+.transitModeButtons, .sideButtons {
+	display: flex;
+	flex-wrap: nowrap;
+	justify-content: space-around;
 }
 
 .sideButtons {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
+	justify-content: center;
 }
 
-.sideButtons div {
-	text-align: center;
-}
-
-.side > input {
+.radioItem > input {
 	visibility: hidden;
 	position: absolute;
 }
 
-.side > input + img{
-  	/* cursor: pointer; */
-	background-color: #888;
-	height: 40px;
-	padding: 8px;
-	border-radius: 25%;
+.radioItem > input:not(:disabled) + div {
+	cursor: pointer;
 }
 
-.side > input:checked + img {
+.radioItem > input + div {
+	background-color: #888;
+    background-size: 3em;
+    background-repeat: no-repeat;
+    background-position: center; 
+	border-radius: 25%;
+	height: 3em;
+	width: 3em;
+	padding: 8px;
+}
+
+.radioItem > input:checked + div {
 	background-color: orange;
 }
 
-/* .side > input:hover + img {
+.radioItem > input:not(:disabled):hover + div {
 	background-color: #aaa;
-} */
+}
+
+.radioItem > input:not(:disabled):checked:hover + div {
+	background-color: lightsalmon;
+}
+
+.carImage {
+	background-image: url('ic_directions_car_white_24px.svg');
+}
+
+.transitImage {
+	background-image: url('ic_directions_transit_white_24px.svg');
+}
+
+.leftImage {
+	background-image: url('ic_arrow_back_white_24px.svg');
+}
+
+.rightImage {
+	background-image: url('ic_arrow_forward_white_24px.svg');
+}
+
+.address {
+	padding: 5px;
+}
+
+.address > label {
+	padding-left: 10px;
+}
+
+input[type="text"] {
+	width: 100%;
+	padding: 10px;
+	border: none;
+	border-radius: 0.75em;
+	background-color: #447;
+	color: #eee;
+}
+
+.calcButton {
+	text-align: center;
+	padding-top: 10px;
+}
+
+input[type="button"] {
+	padding: 15px;
+	color: #eee;
+	background-color: #d80;
+	border: 2px solid #d80;
+	border-radius: 15px;
+	font-weight: bold;
+}
+
+input[type="button"]:hover {
+	background-color: #e90;
+}
+
+input[type="button"]:active {
+	padding-top: 17px;
+	padding-bottom: 13px;
+}
+
+.functions {
+	display: flex;
+	flex-wrap: nowrap;
+	justify-content: space-around;
+	padding: 10px;
+}
+
+.swapButton > input {
+	visibility: hidden;
+	position: absolute;
+}
+
+.swapButton > input:not(:disabled) + div {
+	cursor: pointer;
+}
+
+.swapButton > input + div {
+	background-color: #d80;
+    background-size: 2.5em;
+    background-repeat: no-repeat;
+    background-position: center; 
+	border: 2px solid #d80;
+	border-radius: 25%;
+	height: 2.5em;
+	width: 2.5em;
+	padding: 8px;
+}
+
+.swapButton > input:active + div {
+    background-position: 50% 75%;
+}
+
+.swapButton > input:not(:disabled):hover + div {
+	background-color: #e90;
+}
+
+.swapButtonImage {
+	background-image: url('ic_swap_vert_white_24px.svg');
+}
+
+.routeDetails {
+	width: 30%;
+	text-align: center;
+}
 
 .footer {
 	grid-area: "footer";
