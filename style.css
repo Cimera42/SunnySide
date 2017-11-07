@@ -102,10 +102,6 @@ body {
 	justify-content: space-around;
 }
 
-.sideButtons {
-	justify-content: center;
-}
-
 .radioItem > input {
 	visibility: hidden;
 	position: absolute;
@@ -234,8 +230,12 @@ input[type="button"]:active {
 	background-image: url('ic_swap_vert_white_24px.svg');
 }
 
+#resultText {
+	text-align: center;
+}
+
 .routeDetails {
-	width: 30%;
+	margin-top: 10px;
 	text-align: center;
 }
 

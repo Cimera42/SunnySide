@@ -169,11 +169,18 @@ function calcSun()
 	{
 		document.querySelector("input[value='left']").checked = false;
 		document.querySelector("input[value='right']").checked = false;
+		document.getElementById("resultText").innerText = "Doesn't matter what side you sit";
 	}
 	else if(leftTally > rightTally)
+	{
 		document.querySelector("input[value='left']").checked = true;
+		document.getElementById("resultText").innerHTML = "You should sit on the <strong>left</strong>";
+	}
 	else
+	{
 		document.querySelector("input[value='right']").checked = true;
+		document.getElementById("resultText").innerHTML = "You should sit on the <strong>right</strong>";
+	}
 
 	drawRoute();
 }
@@ -294,6 +301,8 @@ function swapLocations()
 	let temp = document.getElementById("startAddress").value;
 	document.getElementById("startAddress").value = document.getElementById("endAddress").value;
 	document.getElementById("endAddress").value = temp;
+
+	doDirections();
 }
 
 function toRad(x)
