@@ -12,30 +12,41 @@ body {
 
 #map {
 	height: 100%;
-	grid-area: "map";
+	grid-area: map;
 }
 
 .sidebar {
-	grid-area: "sidebar";
+	grid-area: sidebar;
 	display: grid;
 	grid-template-areas: "header" "content" "footer";
 	grid-template-rows: min-content auto 50px;
+	grid-template-columns: 100%;
 	background-color: #669;
 	color: #eee;
 	font-family: "Times";
+	width: 300px;
 }
 
 .header {
-	grid-area: "header";
-	padding-top: 50px;
-	padding-bottom: 40px;
+	grid-area: header;
+	padding-top: 20px;
+	padding-bottom: 20px;
+	border-bottom: 2px solid #ccc;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.heading {
 	font-size: 2em;
 	text-align: center;
-	border-bottom: 2px solid #ccc;
+}
+
+.blurb {
+	padding-top: 10px;
 }
 
 .content {
-	grid-area: "content";
+	grid-area: content;
 	padding: 15px;
 }
 
@@ -240,6 +251,6 @@ input[type="button"]:active {
 }
 
 .footer {
-	grid-area: "footer";
+	grid-area: footer;
 	text-align: center;
 }

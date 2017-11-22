@@ -1,0 +1,14 @@
+{
+  "name": "SunnySide",
+  "version": "1.0.0",
+  "main": "index.html",
+  "repository": "https://github.com/Cimera42/SunnySide.git",
+  "author": "Tim Porritt <cimera2@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.2"
+  },
+  "scripts": {
+    "start": "node ./index.js"
+  }
+}
