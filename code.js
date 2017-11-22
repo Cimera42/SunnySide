@@ -9,13 +9,14 @@ function init()
 
 function setTime()
 {
-	document.getElementById("timeInput").value = nowTime();
+	let n = nowTime();
+	document.getElementById("timeInput").value = n;
 }
 
 function nowTime()
 {
 	let date = new Date();
-	return date.getHours() + ":" + date.getMinutes();
+	return ("00" + date.getHours()).slice(-2) + ":" + ("00" + date.getMinutes()).slice(-2);
 }
 
 function relTime(time)
