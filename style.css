@@ -8,6 +8,7 @@ body {
 	display: grid;
 	grid-template-areas: "sidebar map";
 	grid-template-columns: 300px auto;
+	overflow: hidden;
 }
 
 #map {
@@ -25,6 +26,9 @@ body {
 	color: #eee;
 	font-family: "Times";
 	width: 300px;
+
+	overflow-x: hidden;
+	overflow-y: scroll;
 }
 
 .header {
@@ -67,39 +71,30 @@ body {
 
 .iconCheckbox > input:checked + div,
 .iconCheckbox > input:active + div {
-	background-color: #fa0;
+	fill: #ffaa00;
 }
 
 .iconCheckbox > input + div {
-	background-color: #ccc;
+	fill: #cccccc;
 }
 
 .iconCheckbox > input:not(:checked):not(:active):hover + div {
-	background-color: #eee;
+	fill: #ededed;
 }
 
 .iconCheckbox > input:checked:hover + div {
-	background-color: #fc0;
+	fill: #ffcc00;
 }
 
-.timeIcon {
+.iconCheckbox {
 	margin: 5px;
 	width: 2em;
 	height: 2em;
-    mask-size: 2em;
-    mask-repeat: no-repeat;
-    mask-position: center; 
-	mask-image: url("ic_access_time_white_24px.svg");
 }
 
-.updateIcon {
-	margin: 5px;
-	width: 2em;
-	height: 2em;
-    mask-size: 2em;
-    mask-repeat: no-repeat;
-    mask-position: center; 
-	mask-image: url("ic_update_white_24px.svg");
+.iconCheckbox svg, .loading-icon svg {
+	width: 100%;
+	height: 100%;
 }
 
 #timeInput {
@@ -124,9 +119,9 @@ body {
 
 .radioItem > input + div {
 	background-color: #888;
-    background-size: 3em;
-    background-repeat: no-repeat;
-    background-position: center; 
+	background-size: 3em;
+	background-repeat: no-repeat;
+	background-position: center;
 	border-radius: 25%;
 	height: 3em;
 	width: 3em;
@@ -163,10 +158,53 @@ body {
 
 .address {
 	padding: 5px;
+	position: relative;
+}
+
+.autocomplete {
+	position: absolute;
+	top: 3.5em;
+	z-index: 1000;
+	left: 5px;
+	right: 5px;
+
+	max-height: 50vh;
+	overflow-x: hidden;
+	overflow-y: scroll;
+}
+
+.autocomplete .result {
+	background: white;
+	color: black;
+	padding: 4px;
+}
+
+.autocomplete .result:not(:last-child) {
+	border-bottom: 1px black solid;
+}
+
+.autocomplete .result:focus {
+	background: #bbb;
+	outline: none;
+}
+
+.autocomplete .result .details {
+	font-size: 0.75em;
 }
 
 .address > label {
 	padding-left: 10px;
+}
+
+.input-wrapper {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	width: 100%;
+}
+
+input {
+	outline: none;
 }
 
 input[type="text"] {
@@ -176,6 +214,40 @@ input[type="text"] {
 	border-radius: 0.75em;
 	background-color: #447;
 	color: #eee;
+}
+
+input[type="text"]::placeholder {
+	color: #ff0000;
+	font-weight: 600;
+}
+
+@keyframes rotate {
+	0% {
+		transform: rotateZ(0deg);
+	}
+	100% {
+		transform: rotateZ(360deg);
+	}
+}
+
+.loading-icon {
+	display: none;
+	animation-name: rotate;
+	animation-duration: 1s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+	width: 1em;
+	height: 1em;
+	position: absolute;
+	right: 0.5em;
+}
+
+.loading-icon svg {
+	fill: #ffaa00;
+}
+
+.loading-icon[show] {
+	display: initial;
 }
 
 .calcButton {
@@ -219,9 +291,9 @@ input[type="button"]:active {
 
 .swapButton > input + div {
 	background-color: #d80;
-    background-size: 2.5em;
-    background-repeat: no-repeat;
-    background-position: center; 
+	background-size: 2.5em;
+	background-repeat: no-repeat;
+	background-position: center;
 	border: 2px solid #d80;
 	border-radius: 25%;
 	height: 2.5em;
@@ -230,7 +302,7 @@ input[type="button"]:active {
 }
 
 .swapButton > input:active + div {
-    background-position: 50% 75%;
+	background-position: 50% 75%;
 }
 
 .swapButton > input:not(:disabled):hover + div {
@@ -253,4 +325,17 @@ input[type="button"]:active {
 .footer {
 	grid-area: footer;
 	text-align: center;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:active {
+	color: #ffaa00;
 }

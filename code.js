@@ -1,10 +1,13 @@
 let apiKey = "AIzaSyCJMRhIpOpG6RSPeaBkG_B4qrXDsH1Z3GI";
 let map;
+let startAutocomplete, endAutocomplete;
 
 function init()
 {
 	setTime();
 	document.getElementById("timeInput").disabled = !document.getElementById("timeCheckbox").checked;
+
+	initMap();
 }
 
 function setTime()
@@ -29,84 +32,330 @@ function toggleTime(e)
 	document.getElementById("timeInput").disabled = !e.target.checked;
 }
 
-function initMap() 
+const orsKey = '5b3ce3597851110001cf6248485a84fbf3f749b49ee6270b7df3751b';
+
+function getParts(feature) {
+	return {
+		title: feature.properties.name,
+		details: feature.properties.label,
+	}
+}
+
+class Autocomplete {
+	constructor(elem) {
+		this.elem = elem;
+		this.input = elem.querySelector('input');
+		this.input.onkeydown = function(e) {
+			switch(e.which) {
+				case 40:
+					if(this.listElem.firstChild) {
+						this.listElem.firstChild.focus();
+					}
+					break;
+			}
+		}.bind(this);
+		this.listElem = elem.querySelector('.autocomplete');
+		this.listElem.setAttribute('tabindex', '-1');
+		this.listElem.onkeydown = function(e) {
+			switch(e.which) {
+				case 38: case 40: e.preventDefault(); break;
+			}
+		}
+		this.shouldShowList = false;
+		this.hideList();
+		this.loadingIcon = elem.querySelector('.loading-icon');
+
+		this.input.onfocus = this.onfocus.bind(this);
+		this.input.onblur = this.onblur.bind(this);
+		this.input.oninput = this.oninput.bind(this);
+
+		this.timeout = null;
+		this.data = null;
+		this.parsed = null;
+		this.selected = null;
+	}
+
+	onfocus() {
+		this.showList();
+	}
+
+	onblur(ev) {
+		// Set at end of stack to allow for
+		// new element to be focused
+		setTimeout(function() {
+			const newFocus = document.activeElement;
+			if(!this.elem.contains(newFocus)) {
+				this.hideList();
+			}
+		}.bind(this), 1);
+	}
+
+	clearTimeout() {
+		clearTimeout(this.timeout);
+		this.loadingIcon.removeAttribute('show');
+	}
+
+	oninput(ev) {
+		this.selected = null;
+		this.clearTimeout();
+
+		const text = ev.target.value.trim();
+		if(text.length) {
+			this.showList();
+
+			this.timeout = setTimeout(function() {
+				this.loadingIcon.setAttribute('show', '');
+
+				const mapCentre = map.getCenter();
+				fetch(`https://api.openrouteservice.org/geocode/autocomplete?api_key=${orsKey}&text=${text}&focus.point.lon=${mapCentre.lng}&focus.point.lat=${mapCentre.lat}`).then(function(res) {
+					return res.json();
+				}).then(function(data) {
+					this.clearTimeout();
+
+					this.data = data;
+					const d = data.features.map(function(v) {
+						return getParts(v);
+					});
+					this.parsed = d;
+					this.setList(d);
+				}.bind(this));
+			}.bind(this), 1000);
+		} else {
+			this.hideList();
+			this.setList([]);
+		}
+	}
+
+	select(index) {
+		this.selected = index;
+		this.hideList();
+
+		this.input.value = this.parsed[this.selected].title;
+	}
+
+	setList(data) {
+		while (this.listElem.firstChild) {
+			this.listElem.removeChild(this.listElem.firstChild);
+		}
+
+		data.forEach(function(v, i) {
+			const d = document.createElement('div');
+			d.classList.add('result');
+			d.onclick = function() {
+				this.select(i);
+			}.bind(this);
+			d.onkeydown = function(ev) {
+				switch(ev.which) {
+					case 32: case 13:
+						this.select(i);
+						break;
+					case 38:
+						if(d.previousSibling) {
+							d.previousSibling.focus();
+						}
+						break;
+					case 40:
+						if(d.nextSibling) {
+							d.nextSibling.focus();
+						}
+						break;
+				}
+			}.bind(this);
+			d.onblur = this.onblur.bind(this);
+			d.setAttribute('tabindex', '0');
+
+			const t = document.createElement('div');
+			t.innerText = v.title;
+			t.classList.add('title');
+
+			const s = document.createElement('div');
+			s.innerText = v.details;
+			s.classList.add('details');
+
+			d.appendChild(t);
+			d.appendChild(s);
+
+			this.listElem.appendChild(d);
+		}.bind(this));
+
+		if(this.shouldShowList) {
+			this.showList();
+		}
+	}
+
+	showList() {
+		this.shouldShowList = true;
+		if(this.listElem.firstChild) {
+			this.listElem.style.display = null;
+		}
+	}
+
+	hideList() {
+		this.shouldShowList = false;
+		this.listElem.style.display = 'none';
+	}
+}
+
+function setupAutocomplete(id) {
+	return new Autocomplete(document.getElementById(id));
+}
+
+function initMap()
 {
-	let mapConfig = {
+	map = L.map('map', {
 		center: {
 			lat: -34.397,
 			lng: 150.644
 		},
-		zoom: 8
-	};
-	map = new google.maps.Map(document.getElementById('map'), mapConfig);
-
-	map.addListener('click', function() {
-		if(startInfoWindow) startInfoWindow.close();
-		if(endInfoWindow) endInfoWindow.close();
+		zoom: 8,
 	});
-	
-	let sA = new google.maps.places.Autocomplete(document.querySelector("#startAddress"), {});
-	let sE = new google.maps.places.Autocomplete(document.querySelector("#endAddress"), {});
-	sA.bindTo('bounds', map);
-	sE.bindTo('bounds', map);
+
+	//Stamen.Watercolour
+	//OpenStreetMap.Mapnik
+	var mapTileLayer = L.tileLayer.provider('Wikimedia').addTo(map);
+
+	startAutocomplete = setupAutocomplete('startAddress');
+	endAutocomplete = setupAutocomplete('endAddress');
 }
 
 let startTime, endTime, timeDiff;
 let totalDuration, totalDistance;
 let directionsResultVar;
 let startMarker, endMarker;
-let startInfoWindow, endInfoWindow;
+let startPopup, endPopup;
 let segments = [];
 let segmentLines = [];
 let segmentSunLines = [];
 let leftTally = 0;
 let rightTally = 0;
+let routeStart, routeEnd;
+
+const LON = 0;
+const LAT = 1;
 
 function doDirections()
 {
 	segments.length = 0;
 
-	let transitMode = document.querySelector(".transitModeButtons input:checked").value;
+	// let transitMode = document.querySelector(".transitModeButtons input:checked").value;
 
-	let directionsService = new google.maps.DirectionsService();
-	directionsService.route({
-		origin: document.getElementById("startAddress").value,
-		destination: document.getElementById("endAddress").value,
-		travelMode: transitMode,
-	}, directionResultCallback);
+	const hasStart = startAutocomplete.selected !== null;
+	const hasEnd = endAutocomplete.selected !== null;
+
+	if(hasStart && hasEnd) {
+		const start = startAutocomplete.data.features[startAutocomplete.selected].geometry.coordinates;
+		const end = endAutocomplete.data.features[endAutocomplete.selected].geometry.coordinates;
+
+		fetch(`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${orsKey}&start=${start[LON]},${start[LAT]}&end=${end[LON]},${end[LAT]}`).then(function(res) {
+			return res.json();
+		}).then(function(data) {
+			routeStart = startAutocomplete.data.features[startAutocomplete.selected];
+			routeEnd = endAutocomplete.data.features[endAutocomplete.selected];
+			directionResultCallback(data);
+		}.bind(this));
+	} else {
+		if(!hasStart) {
+			startAutocomplete.input.setAttribute('placeholder', 'Required');
+		} else {
+			startAutocomplete.input.removeAttribute('placeholder');
+		}
+
+		if(!hasEnd) {
+			endAutocomplete.input.setAttribute('placeholder', 'Required');
+		} else {
+			endAutocomplete.input.removeAttribute('placeholder');
+		}
+	}
+
 }
 
-function directionResultCallback(directionsResult, directionsStatus)
-{
-	if(directionsStatus === "OK")
-	{
-		directionsResultVar = directionsResult;
-		totalDuration = directionsResult.routes[0].legs[0].duration.value*1000;
-		totalDistance = directionsResult.routes[0].legs[0].distance.value;
+/*
+ * Format distance as sensible output string
+ * @param distance distance in meters
+ */
+function formatDistance(distance) {
+	if(distance < 1000)
+		return `${distance.toFixed(2)} m`
+	else
+		return `${(distance / 1000).toFixed(0)} km`;
+}
 
-		document.getElementById("routeDistance").innerText = directionsResult.routes[0].legs[0].distance.text;
-		document.getElementById("routeDuration").innerText = directionsResult.routes[0].legs[0].duration.text;
+/*
+ * Format duration as sensible output string
+ * @param duration duration in seconds
+ */
+function formatDuration(duration) {
+	const hours = Math.floor(duration / 3600);
+	const minutes = Math.floor((duration / 60) % 60);
+	const seconds = Math.floor(duration % 60);
+
+	let str = '';
+	let sep = '';
+	if(hours > 0) {
+		str += `${sep}${hours} hr${hours === 1 ? 's' : ''}`;
+		sep = ' ';
+	}
+
+	if(minutes > 0) {
+		str += `${sep}${minutes} min${minutes === 1 ? 's' : ''}`;
+		sep = ' ';
+	}
+
+	if(seconds > 0) {
+		str += `${sep}${seconds} sec${seconds === 1 ? 's' : ''}`;
+		sep = ' ';
+	}
+
+	return str;
+}
+
+function directionResultCallback(directionsResult)
+{
+	if(directionsResult)
+	{
+		const route = directionsResult.features[0];
+		const leg = route.properties.segments[0];
+
+		totalDistance = leg.distance;
+		totalDuration = leg.duration;
+
+		document.getElementById("routeDistance").innerText = formatDistance(totalDistance);
+		document.getElementById("routeDuration").innerText = formatDuration(totalDuration);
 
 		if(document.getElementById("timeCheckbox").checked)
 			startTime = relTime(document.getElementById("timeInput").value).getTime();
 		else
 			startTime = new Date().getTime();
-		endTime = startTime + totalDuration;
+		endTime = startTime + (totalDuration * 1000);
 		timeDiff = endTime - startTime;
 
-		let arrLength = directionsResult.routes[0].overview_path.length;
+		// ORS returns a massive number of route points, reduce them substantially
+		const reduced = route.geometry.coordinates.filter(function(v, i) {
+			return (i % 10) === 0;
+		});
+
 		let distanceTally = 0;
+		let arrLength = reduced.length;
 		for(let i = 0; i < arrLength-1; ++i)
 		{
 			let segment = {
-				start: directionsResult.routes[0].overview_path[i],
-				end: directionsResult.routes[0].overview_path[i+1],
+				start: {
+					lat: reduced[i][LAT],
+					lon: reduced[i][LON],
+				},
+				end: {
+					lat: reduced[i+1][LAT],
+					lon: reduced[i+1][LON],
+				}
 			};
-			segment.heading = google.maps.geometry.spherical.computeHeading(segment.start, segment.end);
+			segment.start.arr = [segment.start.lat, segment.start.lon];
+			segment.end.arr = [segment.end.lat, segment.end.lon];
+
+			segment.heading = coordBearing(segment.start, segment.end);
 			segment.distancePrior = distanceTally;
-			segment.distance = google.maps.geometry.spherical.computeDistanceBetween(segment.start, segment.end);
-			segment.startTime = startTime + (segment.distancePrior/totalDistance)*timeDiff;
-			segment.endTime = startTime + ((segment.distancePrior+segment.distance)/totalDistance)*timeDiff;
+			segment.distance = coordDistance(segment.start, segment.end);
+			segment.startTime = startTime + ((segment.distancePrior / totalDistance) * timeDiff);
+			segment.endTime = startTime + (((segment.distancePrior + segment.distance) / totalDistance) * timeDiff);
 			distanceTally += segment.distance;
 
 			segments.push(segment);
@@ -135,19 +384,21 @@ function calcSun()
 	let isLeft = true;
 
 	segments.forEach(segment => {
-		segment.startTime = startTime + (segment.distancePrior/totalDistance)*timeDiff;
-		segment.endTime = startTime + ((segment.distancePrior+segment.distance)/totalDistance)*timeDiff;
+		segment.startTime = startTime + ((segment.distancePrior / totalDistance) * timeDiff);
+		segment.endTime = startTime + (((segment.distancePrior + segment.distance) / totalDistance) * timeDiff);
 
-		let sunData = SunCalc.getPosition(segment.startTime, segment.start.lat(), segment.start.lng());
+		let sunData = SunCalc.getPosition(segment.startTime, segment.start.lat, segment.start.lon);
 		let angle = Math.PI/2 + sunData.azimuth;
 
-		let proj = map.getProjection();
-		let pp = proj.fromLatLngToPoint(segment.start);
-		let x = pp.x + (Math.cos(angle) * Math.cos(sunData.altitude))/50;
-		let y = pp.y + (Math.sin(angle) * Math.cos(sunData.altitude))/50;
-		let scale = Math.pow(2,map.getZoom());
-		segment.sunPoint = new google.maps.Point(x, y);
-		segment.sunHeading = google.maps.geometry.spherical.computeHeading(segment.start, proj.fromPointToLatLng(segment.sunPoint));
+		let lng = segment.start.lon + ((Math.cos(angle) * Math.cos(sunData.altitude)) / 50);
+		let lat = segment.start.lat + ((Math.sin(angle) * Math.cos(sunData.altitude)) / 50);
+
+		segment.sunPoint = {
+			lat: lat,
+			lon: lng,
+			arr: [lat, lng],
+		};
+		segment.sunHeading = coordBearing(segment.start, segment.sunPoint);
 
 		//left = +90
 		//right = -90
@@ -155,7 +406,7 @@ function calcSun()
 		let side = isLeft ? 90 : -90;
 		if(sunData.altitude >= 0)
 		{
-			segment.sunRating = Math.cos(toRad(segment.sunHeading-(segment.heading+side)));
+			segment.sunRating = Math.cos(toRad(segment.sunHeading - (segment.heading + side)));
 			leftTally += segment.sunRating * (isLeft ? 1:-1);
 			rightTally -= segment.sunRating * (isLeft ? 1:-1);
 		}
@@ -188,120 +439,135 @@ function calcSun()
 
 function drawRoute()
 {
-	segmentLines.forEach(v => v.setMap(null));
-	segmentSunLines.forEach(v => v.setMap(null));
+	segmentLines.forEach(v => v.remove());
+	segmentSunLines.forEach(v => v.remove());
 	segmentLines.length = 0;
 	segmentSunLines.length = 0;
 	if(startMarker)
 	{
-		startMarker.setMap(null);
+		startMarker.remove();
 		startMarker = null;
 	}
-	if(startInfoWindow)
+	if(startPopup)
 	{
-		startInfoWindow.setMap(null);
-		startInfoWindow = null;
+		startPopup.remove();
+		startPopup = null;
 	}
 	if(endMarker)
 	{
-		endMarker.setMap(null);
+		endMarker.remove();
 		endMarker = null;
 	}
-	if(endInfoWindow) 
+	if(endPopup)
 	{
-		endInfoWindow.setMap(null);
-		endInfoWindow = null;
+		endPopup.remove();
+		endPopup = null;
 	}
 
 	let side = (document.querySelector(".sideButtons input:checked") || {value:"left"}).value;
-	let proj = map.getProjection();
 
 	segments.forEach(segment => {
 		let sunRatingNormal = segment.sunRating;
 		if(side === "right")
 			sunRatingNormal *= -1;
-		sunRatingNormal = (sunRatingNormal +1)/2;
-		let red = 256 - sunRatingNormal * 256;
+		sunRatingNormal = (sunRatingNormal + 1) / 2;
+		let red = 256 - (sunRatingNormal * 256);
 		let green = sunRatingNormal * 256;
-		
-		let sunDir = new google.maps.Polyline({
-			path: [
-				segment.start,
-				proj.fromPointToLatLng(segment.sunPoint)
-			],
-			strokeColor: `orange`,
-			strokeOpacity: 1.0,
-			strokeWeight: 1,
-			zIndex: 5
-		});
-		sunDir.setMap(map);
+
+		let sunDir = new L.polyline([
+			segment.start.arr,
+			segment.sunPoint.arr,
+		], {
+			color: 'orange',
+			weight: 1,
+		}).addTo(map);
 		segmentSunLines.push(sunDir);
 
-		let poly = new google.maps.Polyline({
-			path: [
-				segment.start,
-				segment.end
-			],
-			//strokeColor: 'hsl(' + Math.floor(segment.heading) + ',100%,50%)',
-			strokeColor: `rgb(${red},${green},0)`,
-			strokeOpacity: 1.0,
-			strokeWeight: 3,
-			zIndex: 10
-		});
-		poly.setMap(map);
+		let poly = new L.polyline([
+			segment.start,
+			segment.end
+		], {
+			color: `rgb(${red},${green},0)`,
+			weight: 3,
+		}).addTo(map);
 		segmentLines.push(poly);
 	});
-	
-	startMarker = new google.maps.Marker({
-		position: directionsResultVar.routes[0].legs[0].start_location,
-		map: map,
-		icon: markerGen("A", "green"),
-		title: directionsResultVar.routes[0].legs[0].start_address
-	});
-	startInfoWindow = new google.maps.InfoWindow({
-		content: directionsResultVar.routes[0].legs[0].start_address
-	});
-	startMarker.addListener('click', function() {
-		startInfoWindow.open(map, startMarker);
-	});
-	
-	endMarker = new google.maps.Marker({
-		position:  directionsResultVar.routes[0].legs[0].end_location,
-		map: map,
-		icon: markerGen("B", "red"),
-		title: directionsResultVar.routes[0].legs[0].end_address
-	});
-	endInfoWindow = new google.maps.InfoWindow({
-		content: directionsResultVar.routes[0].legs[0].end_address
-	});
-	endMarker.addListener('click', function() {
-		endInfoWindow.open(map, endMarker);
-	});
+
+	const iconOptions = function(name) {
+		return {
+			iconUrl: `leaflet/images/${name}-marker-icon.png`,
+			iconRetinaUrl: `leaflet/images/${name}-marker-icon-2x.png`,
+			shadowUrl: `leaflet/images/marker-shadow.png`,
+			iconSize: [25, 41],
+			iconAnchor: [12, 41],
+			popupAnchor: [1, -34],
+			tooltipAnchor: [16, -28],
+			shadowSize: [41, 41]
+		};
+	}
+
+	const startIcon = L.icon(iconOptions('start'));
+	const endIcon = L.icon(iconOptions('end'));
+	startMarker = new L.marker(segments[0].start.arr, {
+		title: routeStart.properties.label,
+		icon: startIcon,
+	}).addTo(map);
+	endMarker = new L.marker(segments[segments.length-1].end.arr, {
+		title: routeEnd.properties.label,
+		icon: endIcon,
+	}).addTo(map);
+
+	startPopup = L.popup().setContent(routeStart.properties.label);
+	startMarker.bindPopup(startPopup);
+
+	endPopup = L.popup().setContent(routeEnd.properties.label);
+	endMarker.bindPopup(endPopup);
 
 	focusOnRoute();
 }
 
 function focusOnRoute()
 {
-	let newBounds = new google.maps.LatLngBounds();
-	segmentLines.forEach(v => {
-		let path = v.getPath().getArray();
-		newBounds.extend(path[0]);
-		newBounds.extend(path[1]);
-	});
-	segmentSunLines.forEach(v => {
-		let path = v.getPath().getArray();
-		newBounds.extend(path[0]);
-		newBounds.extend(path[1]);
+	let newBounds = [];
+	segments.forEach(v => {
+		newBounds.push(v.start);
+		newBounds.push(v.end);
 	});
 	map.fitBounds(newBounds);
 }
 
 function swapLocations()
 {
-	let temp = document.getElementById("startAddress").value;
-	document.getElementById("startAddress").value = document.getElementById("endAddress").value;
-	document.getElementById("endAddress").value = temp;
+	startAutocomplete.clearTimeout();
+	endAutocomplete.clearTimeout();
+
+	const temp = {
+		value: startAutocomplete.input.value,
+		data: startAutocomplete.data,
+		parsed: startAutocomplete.parsed,
+		selected: startAutocomplete.selected,
+	}
+
+	startAutocomplete.input.value = endAutocomplete.input.value;
+	endAutocomplete.input.value = temp.value;
+
+	startAutocomplete.data = endAutocomplete.data;
+	endAutocomplete.data = temp.data;
+
+	startAutocomplete.parsed = endAutocomplete.parsed;
+	endAutocomplete.parsed = temp.parsed;
+
+	startAutocomplete.selected = endAutocomplete.selected;
+	endAutocomplete.selected = temp.selected;
+
+	// Swap autocomplete lists
+	const tempElem = document.createElement('div');
+	while(startAutocomplete.listElem.firstChild)
+		tempElem.appendChild(startAutocomplete.listElem.firstChild);
+	while(endAutocomplete.listElem.firstChild)
+		startAutocomplete.listElem.appendChild(endAutocomplete.listElem.firstChild);
+	while(tempElem.firstChild)
+		endAutocomplete.listElem.appendChild(tempElem.firstChild);
 
 	doDirections();
 }
@@ -314,6 +580,47 @@ function toRad(x)
 function toDeg(x)
 {
 	return x / (Math.PI / 180);
+}
+
+// https://www.movable-type.co.uk/scripts/latlong.html
+function coordDistance(start, end) {
+	const lon1 = start.lon;
+	const lat1 = start.lat;
+	const lon2 = end.lon;
+	const lat2 = end.lat;
+
+	var R = 6371e3; // metres
+	var φ1 = toRad(lat1);
+	var φ2 = toRad(lat2);
+	var Δφ = toRad(lat2 - lat1);
+	var Δλ = toRad(lon2 - lon1);
+
+	var a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+			Math.cos(φ1) * Math.cos(φ2) *
+			Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+	var d = R * c;
+	return d;
+}
+
+// https://www.movable-type.co.uk/scripts/latlong.html
+function coordBearing(start, end) {
+	const lon1 = start.lon;
+	const lat1 = start.lat;
+	const lon2 = end.lon;
+	const lat2 = end.lat;
+
+	var φ1 = toRad(lat1);
+	var φ2 = toRad(lat2);
+	var Δλ = toRad(lon2 - lon1);
+
+	var y = Math.sin(Δλ) * Math.cos(φ2);
+	var x = Math.cos(φ1) * Math.sin(φ2) -
+			Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+	var brng = toDeg(Math.atan2(y, x));
+
+	return brng;
 }
 
 //https://stackoverflow.com/a/18531494
