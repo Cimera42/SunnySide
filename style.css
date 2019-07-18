@@ -315,6 +315,7 @@ input[type="button"]:active {
 
 #resultText {
 	text-align: center;
+	margin-top: 10px;
 }
 
 .routeDetails {

@@ -212,7 +212,8 @@ function initMap()
 
 	//Stamen.Watercolour
 	//OpenStreetMap.Mapnik
-	var mapTileLayer = L.tileLayer.provider('Wikimedia').addTo(map);
+	const mapTileLayer = L.tileLayer.provider('Wikimedia').addTo(map);
+	const mapScale = L.control.scale().addTo(map);
 
 	startAutocomplete = setupAutocomplete('startAddress');
 	endAutocomplete = setupAutocomplete('endAddress');
