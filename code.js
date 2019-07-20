@@ -389,7 +389,7 @@ function calcSun()
 		segment.endTime = startTime + (((segment.distancePrior + segment.distance) / totalDistance) * timeDiff);
 
 		let sunData = SunCalc.getPosition(segment.startTime, segment.start.lat, segment.start.lon);
-		let angle = Math.PI/2 + sunData.azimuth;
+		let angle = sunData.azimuth - Math.PI/2;
 
 		let lng = segment.start.lon + ((Math.cos(angle) * Math.cos(sunData.altitude)) / 50);
 		let lat = segment.start.lat + ((Math.sin(angle) * Math.cos(sunData.altitude)) / 50);
