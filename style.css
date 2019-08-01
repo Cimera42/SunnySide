@@ -217,8 +217,12 @@ input[type="text"] {
 }
 
 input[type="text"]::placeholder {
-	color: #ff0000;
+	color: #fcc;
 	font-weight: 600;
+}
+
+input[type="text"].invalid {
+	background: #744;
 }
 
 @keyframes rotate {

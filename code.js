@@ -80,12 +80,17 @@ class Autocomplete {
 	}
 
 	onblur(ev) {
+		const text = ev.target.value.trim();
+
 		// Set at end of stack to allow for
 		// new element to be focused
 		setTimeout(function() {
 			const newFocus = document.activeElement;
 			if(!this.elem.contains(newFocus)) {
 				this.hideList();
+				if(this.selected === null && text.length > 0) {
+					this.input.classList.add('invalid');
+				}
 			}
 		}.bind(this), 1);
 	}
@@ -98,6 +103,7 @@ class Autocomplete {
 	oninput(ev) {
 		this.selected = null;
 		this.clearTimeout();
+		this.input.classList.remove('invalid');
 
 		const text = ev.target.value.trim();
 		if(text.length) {
@@ -131,6 +137,7 @@ class Autocomplete {
 		this.hideList();
 
 		this.input.value = this.parsed[this.selected].title;
+		this.input.classList.remove('invalid');
 	}
 
 	setList(data) {
@@ -257,14 +264,18 @@ function doDirections()
 	} else {
 		if(!hasStart) {
 			startAutocomplete.input.setAttribute('placeholder', 'Required');
+			startAutocomplete.input.classList.add('invalid');
 		} else {
 			startAutocomplete.input.removeAttribute('placeholder');
+			startAutocomplete.input.classList.remove('invalid');
 		}
 
 		if(!hasEnd) {
 			endAutocomplete.input.setAttribute('placeholder', 'Required');
+			endAutocomplete.input.classList.add('invalid');
 		} else {
 			endAutocomplete.input.removeAttribute('placeholder');
+			endAutocomplete.input.classList.remove('invalid');
 		}
 	}
 
